@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: |
-        version_string=${${{ inputs.version }}#"v"}
+      - env:
+          VERSION: ${{ inputs.version }}
+        run: |
+        version_string=${$VERSION#"v"}
         version_parts=$(echo $version_string | tr "." "\n")
         for v_part in $version_parts
         do
