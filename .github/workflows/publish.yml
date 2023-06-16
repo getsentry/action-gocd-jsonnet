@@ -12,12 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - env:
+      - uses: actions/github-script@v6
+        env:
           VERSION: ${{ inputs.version }}
-        run: |
-          version_string=${VERSION#"v"}
-          version_parts=$(echo $version_string | tr "." "\n")
-          for v_part in $version_parts
-          do
-              echo "> [$v_part]"
-          done
+        with:
+          script: |
+            console.log(process.env.VERSION);
