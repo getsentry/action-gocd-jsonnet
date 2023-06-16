@@ -1,0 +1,16 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+inputs:
+  version:
+    description: 'The version to publish (i.e. v1.0.0)'
+    required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo ${{ inputs.version }}
