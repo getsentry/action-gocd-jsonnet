@@ -1,0 +1,50 @@
+name: 'GoCD Jsonnet'
+description: 'This action checks Jsonnet files to build, lint, fmt and ensure commited pipelines are up-to-date'
+inputs:
+  jsonnet-dir:
+    description: 'The path for jsonnet files'
+    required: true
+    default: './gocd/'
+  generated-dir:
+    description: 'The path for jsonnet files are rendered to'
+    required: true
+    default: './gocd/generated-pipelines/'
+runs:
+  using: "composite"
+  steps:
+    # Get the code
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+
+    - name: Install go
+      uses: actions/setup-go@v4
+    - name: Install Jsonnet
+      shell: bash
+      run: |
+        go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+        go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
+        go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
+
+    - name: jsonnetfmt
+      shell: bash
+      run: |
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnetfmt --test {} \;
+
+    - name: jsonnet-lint
+      shell: bash
+      run: |
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet-lint {} \;
+
+    - name: Remove existing pipelines to ensure we don't have lingering pipelines
+      shell: bash
+      run: |
+        rm -rf   ${{inputs.generated-dir}}
+        mkdir -p ${{inputs.generated-dir}}
+
+    - name: Render and Diff
+      shell: bash
+      run: |
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet -m ${{inputs.generated-dir}} {} \;
+
+    - name: Fail if generated pipelines have changed
+      shell: bash
+      run: if [ -n "$(git status --porcelain)" ] ; then git status; exit 1; fi
