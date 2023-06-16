@@ -17,4 +17,5 @@ jobs:
           VERSION: ${{ inputs.version }}
         with:
           script: |
-            console.log(process.env.VERSION);
+            const publish = require('./.github/scripts/publish.js');
+            publish({context, github});
