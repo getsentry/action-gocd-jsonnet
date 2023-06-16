@@ -26,16 +26,23 @@ module.exports = async function({context, octokit}) {
   ];
 
   for (const t of tagNames) {
-    console.log(`Creating release ${t}`);
     const releaseID = await getRelease(octokit, context, t);
     if (releaseID) {
       console.log(`    Updating release ${t}`, releaseID);
+      await octokit.rest.git.updateRef({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        ref: `tags/${t}`,
+        sha: context.sha,
+        force: true,
+      });
+
       await octokit.rest.repos.updateRelease({
         owner: context.repo.owner,
         repo: context.repo.repo,
         release_id: releaseID,
         tag_name: t,
-        target_commitish: 'main',
+        make_latest: true,
       });
     } else {
       console.log(`    Creating release ${t} not found`);
