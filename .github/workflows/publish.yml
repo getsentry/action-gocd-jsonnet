@@ -15,9 +15,9 @@ jobs:
       - env:
           VERSION: ${{ inputs.version }}
         run: |
-        version_string=${VERSION#"v"}
-        version_parts=$(echo $version_string | tr "." "\n")
-        for v_part in $version_parts
-        do
-            echo "> [$v_part]"
-        done
+          version_string=${VERSION#"v"}
+          version_parts=$(echo $version_string | tr "." "\n")
+          for v_part in $version_parts
+          do
+              echo "> [$v_part]"
+          done
