@@ -18,4 +18,4 @@ jobs:
         with:
           script: |
             const publish = require('./.github/scripts/publish.js');
-            publish({context, github});
+            publish({context, octokit: github});
