@@ -37,20 +37,21 @@ module.exports = async function({context, octokit}) {
         force: true,
       });
 
-      await octokit.rest.repos.updateRelease({
+      // Delete the release so we can re-create it with new release notes.
+      await octokit.rest.repos.deleteRelease({
         owner: context.repo.owner,
         repo: context.repo.repo,
         release_id: releaseID,
-        tag_name: t,
-        make_latest: true,
-      });
-    } else {
-      console.log(`    Creating release ${t} not found`);
-      await octokit.rest.repos.createRelease({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        tag_name: t,
       });
     }
+
+    console.log(`    Creating release ${t} not found`);
+    await octokit.rest.repos.createRelease({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      tag_name: t,
+      generate_release_notes: true,
+      make_latest: true,
+    });
   }
 }
