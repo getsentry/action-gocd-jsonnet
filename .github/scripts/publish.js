@@ -51,7 +51,6 @@ module.exports = async function({context, octokit}) {
       repo: context.repo.repo,
       tag_name: t,
       generate_release_notes: true,
-      make_latest: true,
     });
   }
 }
