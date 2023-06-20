@@ -27,14 +27,12 @@ runs:
     - name: jsonnetfmt
       shell: bash
       run: |
-        set -e
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnetfmt --test {} \;
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnetfmt --test {} +
 
     - name: jsonnet-lint
       shell: bash
       run: |
-        set -e
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet-lint {} \;
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet-lint {} +
 
     - name: Remove existing pipelines to ensure we don't have lingering pipelines
       shell: bash
@@ -46,8 +44,7 @@ runs:
     - name: Render and Diff
       shell: bash
       run: |
-        set -e
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet -J vendor -m ${{inputs.generated-dir}} {} \;
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet -J vendor -m ${{inputs.generated-dir}} {} +
 
     - name: Fail if generated pipelines have changed
       shell: bash
