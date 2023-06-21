@@ -27,6 +27,13 @@ runs:
         go install github.com/google/go-jsonnet/cmd/jsonnet@latest
         go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
         go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
+        go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
+
+    - name: jsonnet bundler install
+      shell: bash
+      run: |
+        cd ${{inputs.jsonnet-dir}}
+        jb install
 
     - name: jsonnetfmt
       id: jsonnetfmt
