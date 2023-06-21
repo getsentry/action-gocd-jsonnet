@@ -9,6 +9,10 @@ inputs:
     description: 'The path for jsonnet files are rendered to'
     required: true
     default: './gocd/generated-pipelines/'
+  check-for-changes:
+    description: "If the generated pipelines are store, set this to true"
+    type: boolean
+    default: false
 runs:
   using: "composite"
   steps:
@@ -25,27 +29,33 @@ runs:
         go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
 
     - name: jsonnetfmt
+      id: jsonnetfmt
       shell: bash
       run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnetfmt --test {} +
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnetfmt --test
+
+    - name: jsonnetfmt error
+      shell: bash
+      if: steps.jsonnetfmt.outcome == 'failure' && always()
+      run: echo -e "\n\n⚠️ Please run 'jsonnetfmt -i **/*.jsonnet && jsonnetfmt -i **/*.libsonnet' to fix formatting issues.\n\n"
 
     - name: jsonnet-lint
       shell: bash
       run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet-lint {} +
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnet-lint
 
     - name: Remove existing pipelines to ensure we don't have lingering pipelines
       shell: bash
       run: |
-        set -e
         rm -rf   ${{inputs.generated-dir}}
         mkdir -p ${{inputs.generated-dir}}
 
     - name: Render and Diff
       shell: bash
       run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -exec echo {} \; -exec jsonnet -J vendor -m ${{inputs.generated-dir}} {} +
+        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnet -J vendor -m ${{inputs.generated-dir}}
 
     - name: Fail if generated pipelines have changed
+      if: ${{ inputs.check-for-changes == 'true' }}
       shell: bash
       run: if [ -n "$(git status --porcelain)" ] ; then git status; exit 1; fi
