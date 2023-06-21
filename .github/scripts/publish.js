@@ -28,7 +28,7 @@ module.exports = async function({context, octokit}) {
   for (const t of tagNames) {
     const releaseID = await getRelease(octokit, context, t);
     if (releaseID) {
-      console.log(`    Updating release ${t}`, releaseID);
+      console.log(`    Updating tag ${t}`, releaseID);
       await octokit.rest.git.updateRef({
         owner: context.repo.owner,
         repo: context.repo.repo,
@@ -38,6 +38,7 @@ module.exports = async function({context, octokit}) {
       });
 
       // Delete the release so we can re-create it with new release notes.
+      console.log(`    Deleting old release ${t}`, releaseID);
       await octokit.rest.repos.deleteRelease({
         owner: context.repo.owner,
         repo: context.repo.repo,
@@ -45,7 +46,7 @@ module.exports = async function({context, octokit}) {
       });
     }
 
-    console.log(`    Creating release ${t} not found`);
+    console.log(`    Creating release ${t}`);
     await octokit.rest.repos.createRelease({
       owner: context.repo.owner,
       repo: context.repo.repo,
