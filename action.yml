@@ -9,6 +9,10 @@ inputs:
     description: 'The path for jsonnet files are rendered to'
     required: true
     default: './gocd/generated-pipelines/'
+  jb-install:
+    description: "When true, jb install will be run"
+    type: boolean
+    default: false
   check-for-changes:
     description: "If the generated pipelines are store, set this to true"
     type: boolean
@@ -31,6 +35,7 @@ runs:
 
     - name: jsonnet bundler install
       shell: bash
+      if: ${{ inputs.jb-install == 'true' }}
       run: |
         cd ${{inputs.jsonnet-dir}}
         jb install
