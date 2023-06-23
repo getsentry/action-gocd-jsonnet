@@ -46,7 +46,9 @@ runs:
       run: |
         set -eou pipefail
 
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \)); do
+        # Remove multiple slashes from path
+        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n📋 Checking format of: $i\n";
           jsonnetfmt --test $i
         done
@@ -61,7 +63,9 @@ runs:
       run: |
         set -eou pipefail
 
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \)); do
+        # Remove multiple slashes from path
+        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🔬 Linting: $i\n";
           jsonnet-lint -J ${{inputs.jsonnet-dir}}/vendor $i
         done
@@ -77,7 +81,8 @@ runs:
       run: |
         set -eou pipefail
 
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \)); do
+        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
           jsonnet -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
         done
