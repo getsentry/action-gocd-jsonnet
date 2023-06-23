@@ -43,7 +43,13 @@ runs:
     - name: jsonnetfmt
       id: jsonnetfmt
       shell: bash
-      run: ./scripts/jsonnetfmt.sh ${{inputs.jsonnet-dir}}
+      run: |
+        set -eou pipefail
+
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \)); do
+          echo -e "\n📋 Checking format of: $i\n";
+          jsonnetfmt --test $i
+        done
 
     - name: jsonnetfmt error
       shell: bash
@@ -52,7 +58,13 @@ runs:
 
     - name: jsonnet-lint
       shell: bash
-      run: ./scripts/jsonnetlint.sh ${{inputs.jsonnet-dir}}
+      run: |
+        set -eou pipefail
+
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \)); do
+          echo -e "\n🔬 Linting: $i\n";
+          jsonnet-lint -J ${{inputs.jsonnet-dir}}/vendor $i
+        done
 
     - name: Remove existing pipelines to ensure we don't have lingering pipelines
       shell: bash
@@ -62,7 +74,13 @@ runs:
 
     - name: Render and Diff
       shell: bash
-      run: ./scripts/jsonnet-render.sh ${{inputs.jsonnet-dir}} ${{inputs.generated-dir}}
+      run: |
+        set -eou pipefail
+
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \)); do
+          echo -e "\n🖨️ Rendering: $i\n";
+          jsonnet -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
+        done
 
     - name: Fail if generated pipelines have changed
       if: ${{ inputs.check-for-changes == 'true' }}
