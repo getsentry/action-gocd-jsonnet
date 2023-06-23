@@ -43,8 +43,7 @@ runs:
     - name: jsonnetfmt
       id: jsonnetfmt
       shell: bash
-      run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnetfmt --test
+      run: ./scripts/jsonnetfmt.sh ${{inputs.jsonnet-dir}}
 
     - name: jsonnetfmt error
       shell: bash
@@ -53,8 +52,7 @@ runs:
 
     - name: jsonnet-lint
       shell: bash
-      run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnet-lint -J ${{inputs.jsonnet-dir}}/vendor
+      run: ./scripts/jsonnetlint.sh ${{inputs.jsonnet-dir}}
 
     - name: Remove existing pipelines to ensure we don't have lingering pipelines
       shell: bash
@@ -64,8 +62,7 @@ runs:
 
     - name: Render and Diff
       shell: bash
-      run: |
-        find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -print0 | xargs -n 1 -0 jsonnet -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}}
+      run: ./scripts/jsonnet-render.sh ${{inputs.jsonnet-dir}} ${{inputs.generated-dir}}
 
     - name: Fail if generated pipelines have changed
       if: ${{ inputs.check-for-changes == 'true' }}
