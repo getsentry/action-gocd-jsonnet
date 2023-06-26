@@ -21,3 +21,8 @@ jobs:
         with:
           jsonnet-dir: ./testdata/
           generated-dir: ./testdata/generated/
+      - uses: ./
+        with:
+          jsonnet-dir: ./testdata/
+          generated-dir: ./testdata/generated/
+          convert-to-yaml: true
