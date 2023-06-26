@@ -17,6 +17,10 @@ inputs:
     description: "If the generated pipelines are store, set this to true"
     type: boolean
     default: false
+  convert-to-yaml:
+    description: "If the generated pipelines should be converted from json to yaml"
+    type: boolean
+    default: false
 runs:
   using: "composite"
   steps:
@@ -32,6 +36,7 @@ runs:
         go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
         go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
         go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
+        go install github.com/mikefarah/yq/v4@latest
 
     - name: jsonnet bundler install
       shell: bash
@@ -76,7 +81,7 @@ runs:
         rm -rf   ${{inputs.generated-dir}}
         mkdir -p ${{inputs.generated-dir}}
 
-    - name: Render and Diff
+    - name: Render
       shell: bash
       run: |
         set -eou pipefail
@@ -85,6 +90,17 @@ runs:
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
           jsonnet -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
+        done
+
+    - name: Convert json to yaml
+      shell: bash
+      if: ${{ inputs.convert-to-yaml == 'true' }}
+      run: |
+        set -eou pipefail
+
+        for i in $(find ${{inputs.generated-dir}} -type f \( -name '*.yaml' \) ); do
+          echo -e "\n💱 Converting to yaml: $i\n";
+          yq -p json -o yaml -i $i;
         done
 
     - name: Fail if generated pipelines have changed

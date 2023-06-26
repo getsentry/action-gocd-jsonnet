@@ -1,7 +1,7 @@
 local who = 'world';
 
 {
-  'greeting.json': {
+  'greeting.yaml': {
     hello: who,
   },
 }
