@@ -21,6 +21,7 @@ jobs:
         with:
           jsonnet-dir: ./testdata/
           generated-dir: ./testdata/generated/
+          check-for-changes: true
       - uses: ./
         with:
           jsonnet-dir: ./testdata/
