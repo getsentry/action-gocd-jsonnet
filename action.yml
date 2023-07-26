@@ -21,6 +21,10 @@ inputs:
     description: "If the generated pipelines should be converted from json to yaml"
     type: boolean
     default: false
+  jsonnet-args:
+    description: 'Any additional arguments to build jsonnet, defaults to external var used by gocd-jsonnet libs'
+    required: false
+    default: '--ext-code output-files=true'
 runs:
   using: "composite"
   steps:
@@ -89,7 +93,7 @@ runs:
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
-          jsonnet -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
+          jsonnet ${{inputs.jsonnet-args}} -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
         done
 
     - name: Convert json to yaml
