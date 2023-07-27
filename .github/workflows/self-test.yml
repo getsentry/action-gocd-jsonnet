@@ -18,11 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./
+        name: Render multiple files and check for changes
         with:
           jsonnet-dir: ./testdata/
           generated-dir: ./testdata/generated/
+          render-as-single-file: false
           check-for-changes: true
       - uses: ./
+        name: Render single file
         with:
           jsonnet-dir: ./testdata/
           generated-dir: ./testdata/generated/
