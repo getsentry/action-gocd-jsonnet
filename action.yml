@@ -4,11 +4,16 @@ inputs:
   jsonnet-dir:
     description: 'The path for jsonnet files'
     required: true
-    default: './gocd/'
+    default: 'gocd/templates'
   generated-dir:
     description: 'The path for jsonnet files are rendered to'
     required: true
-    default: './gocd/generated-pipelines/'
+    default: 'gocd/generated-pipelines'
+  render-as-single-file:
+    descript: 'Whether to render as a single file or multiple'
+    type: boolean
+    default: true
+    required: true
   jb-install:
     description: "When true, jb install will be run"
     type: boolean
@@ -21,10 +26,6 @@ inputs:
     description: "If the generated pipelines should be converted from json to yaml"
     type: boolean
     default: false
-  jsonnet-args:
-    description: 'Any additional arguments to build jsonnet, defaults to external var used by gocd-jsonnet libs'
-    required: false
-    default: '--ext-code output-files=true'
 runs:
   using: "composite"
   steps:
@@ -85,15 +86,36 @@ runs:
         rm -rf   ${{inputs.generated-dir}}
         mkdir -p ${{inputs.generated-dir}}
 
-    - name: Render
+    - name: Render Multiple Files
       shell: bash
+      if: ${{ inputs.render-as-single-file == 'false' }}
       run: |
         set -eou pipefail
 
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
-          jsonnet ${{inputs.jsonnet-args}} -J ${{inputs.jsonnet-dir}}/vendor -m ${{inputs.generated-dir}} $i;
+          jsonnet \
+            -J ${{inputs.jsonnet-dir}}/vendor \
+            --ext-code output-files=true \
+            -m ${{inputs.generated-dir}} \
+            $i;
+        done
+
+    - name: Render Single File
+      shell: bash
+      if: ${{ inputs.render-as-single-file == 'true' }}
+      run: |
+        set -eou pipefail
+
+        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
+          echo -e "\n🖨️ Rendering: $i\n";
+          jsonnet \
+            -J ${{inputs.jsonnet-dir}}/vendor \
+            --ext-code output-files=false \
+            -o ${{inputs.generated-dir}}/all-pipelines.yaml \
+            $i;
         done
 
     - name: Convert json to yaml
