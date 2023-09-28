@@ -26,6 +26,10 @@ inputs:
     description: "If the generated pipelines should be converted from json to yaml"
     type: boolean
     default: false
+  render-jsonnet-files:
+    description: "Whether the action should render jsonnet files"
+    type: boolean
+    default: true
 runs:
   using: "composite"
   steps:
@@ -88,7 +92,7 @@ runs:
 
     - name: Render Multiple Files
       shell: bash
-      if: ${{ inputs.render-as-single-file == 'false' }}
+      if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'false' }}
       run: |
         set -eou pipefail
 
@@ -104,7 +108,7 @@ runs:
 
     - name: Render Single File
       shell: bash
-      if: ${{ inputs.render-as-single-file == 'true' }}
+      if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'true' }}
       run: |
         set -eou pipefail
 
