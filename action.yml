@@ -25,7 +25,7 @@ inputs:
   jb-install:
     description: "When true, jb install will be run"
     type: boolean
-    default: true
+    default: "auto"
   check-for-changes:
     description: "If the generated pipelines are store, set this to true"
     type: boolean
@@ -59,10 +59,13 @@ runs:
 
     - name: jsonnet bundler install
       shell: bash --noprofile --norc -eo pipefail -ux {0}
-      if: inputs.jb-install == 'true'
       run: |
         cd ${{inputs.jsonnet-dir}}
-        jb install
+        if [[ ${{inputs.jb-install}} == 'true' ]] ||
+           [[ ${{inputs.jb-install}} == 'auto' && -e jsonnetfile.json ]]
+        then
+          jb install
+        fi
 
     - name: jsonnetfmt
       id: jsonnetfmt
