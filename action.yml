@@ -1,35 +1,45 @@
-name: 'GoCD Jsonnet'
-description: 'This action checks Jsonnet files to build, lint, fmt and ensure commited pipelines are up-to-date'
+name: "GoCD Jsonnet"
+description:
+  "This action checks Jsonnet files to build, lint, fmt and ensure commited
+  pipelines are up-to-date"
 inputs:
   jsonnet-dir:
-    description: 'The path for jsonnet files'
+    description: "The path for jsonnet files"
     required: true
-    default: 'gocd/templates'
+    default: "gocd/templates"
   generated-dir:
-    description: 'The path for jsonnet files are rendered to'
+    description: "The path for jsonnet files are rendered to"
     required: true
-    default: 'gocd/generated-pipelines'
+    default: "gocd/generated-pipelines"
+  jsonnet-path:
+    description:
+      "colon-delimited jsonnet import paths; exported as $JSONNET_PATH"
+    required: true
+    type: string
+    default: "vendor"
   render-as-single-file:
-    descript: 'Whether to render as a single file or multiple'
+    descript: "Whether to render as a single file or multiple"
     type: boolean
-    default: true
     required: true
+    default: true
   jb-install:
     description: "When true, jb install will be run"
     type: boolean
-    default: false
+    default: "auto"
   check-for-changes:
     description: "If the generated pipelines are commited to your repo, set this to true to ensure the PR is up-to-date (i.e. the yaml has been built with all jsonnet changes)"
     type: boolean
     default: false
   convert-to-yaml:
-    description: "If the generated pipelines should be converted from json to yaml"
+    description:
+      "If the generated pipelines should be converted from json to yaml"
     type: boolean
     default: false
   render-jsonnet-files:
     description: "Whether the action should render jsonnet files"
     type: boolean
     default: true
+
 runs:
   using: "composite"
   steps:
@@ -39,7 +49,7 @@ runs:
     - name: Install go
       uses: actions/setup-go@v4
     - name: Install Jsonnet
-      shell: bash
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
       run: |
         go install github.com/google/go-jsonnet/cmd/jsonnet@latest
         go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
@@ -48,18 +58,19 @@ runs:
         go install github.com/mikefarah/yq/v4@latest
 
     - name: jsonnet bundler install
-      shell: bash
-      if: ${{ inputs.jb-install == 'true' }}
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
       run: |
         cd ${{inputs.jsonnet-dir}}
-        jb install
+        if [[ ${{inputs.jb-install}} == 'true' ]] ||
+           [[ ${{inputs.jb-install}} == 'auto' && -e jsonnetfile.json ]]
+        then
+          jb install
+        fi
 
     - name: jsonnetfmt
       id: jsonnetfmt
-      shell: bash
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
       run: |
-        set -eou pipefail
-
         # Remove multiple slashes from path
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
@@ -68,15 +79,22 @@ runs:
         done
 
     - name: jsonnetfmt error
-      shell: bash
-      if: steps.jsonnetfmt.outcome == 'failure' && always()
-      run: echo -e "\n\n⚠️ Please run 'jsonnetfmt -i **/*.jsonnet && jsonnetfmt -i **/*.libsonnet' to fix formatting issues.\n\n"
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
+      if: |
+        steps.jsonnetfmt.outcome == 'failure' &&
+        always()
+      run: |
+        cat <<EOF
+
+
+        ⚠️ Please run 'jsonnetfmt -i **/*.jsonnet && jsonnetfmt -i **/*.libsonnet' to fix formatting issues.\
+
+
+        EOF
 
     - name: jsonnet-lint
-      shell: bash
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
       run: |
-        set -eou pipefail
-
         # Remove multiple slashes from path
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
@@ -84,18 +102,19 @@ runs:
           jsonnet-lint -J ${{inputs.jsonnet-dir}}/vendor $i
         done
 
-    - name: Remove existing pipelines to ensure we don't have lingering pipelines
-      shell: bash
+    - name:
+        Remove existing pipelines to ensure we don't have lingering pipelines
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
       run: |
         rm -rf   ${{inputs.generated-dir}}
         mkdir -p ${{inputs.generated-dir}}
 
     - name: Render Multiple Files
-      shell: bash
-      if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'false' }}
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
+      if: |
+        inputs.render-jsonnet-files =='true' &&
+        inputs.render-as-single-file == 'false'
       run: |
-        set -eou pipefail
-
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
@@ -107,11 +126,11 @@ runs:
         done
 
     - name: Render Single File
-      shell: bash
-      if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'true' }}
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
+      if: |
+        inputs.render-jsonnet-files =='true' &&
+        inputs.render-as-single-file == 'true'
       run: |
-        set -eou pipefail
-
         ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
         for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
@@ -123,17 +142,19 @@ runs:
         done
 
     - name: Convert json to yaml
-      shell: bash
-      if: ${{ inputs.convert-to-yaml == 'true' }}
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
+      if: inputs.convert-to-yaml == 'true'
       run: |
-        set -eou pipefail
-
         for i in $(find ${{inputs.generated-dir}} -type f \( -name '*.yaml' \) ); do
           echo -e "\n💱 Converting to yaml: $i\n";
           yq -p json -o yaml -i $i;
         done
 
     - name: Fail if generated pipelines have changed
-      if: ${{ inputs.check-for-changes == 'true' }}
-      shell: bash
-      run: if [ -n "$(git status --porcelain)" ] ; then git status; exit 1; fi
+      if: inputs.check-for-changes == 'true'
+      shell: bash --noprofile --norc -eo pipefail -ux {0}
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          git status
+          exit 1
+        fi
