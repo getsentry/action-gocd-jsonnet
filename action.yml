@@ -19,7 +19,7 @@ inputs:
     type: boolean
     default: false
   check-for-changes:
-    description: "If the generated pipelines are store, set this to true"
+    description: "If the generated pipelines are commited to your repo, set this to true to ensure the PR is up-to-date (i.e. the yaml has been built with all jsonnet changes)"
     type: boolean
     default: false
   convert-to-yaml:
