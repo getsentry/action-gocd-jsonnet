@@ -33,11 +33,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Get the code
-    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: Install go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639 # v4
     - name: Install Jsonnet
       shell: bash
       run: |
