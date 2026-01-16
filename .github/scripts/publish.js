@@ -6,18 +6,18 @@ async function getRelease(octokit, context, tag) {
       tag,
     });
     return resp.data.id;
-  } catch (err) {
-
-  }
+  } catch (err) {}
   return null;
 }
 
-module.exports = async function({context, octokit}) {
+module.exports = async function ({ context, octokit }) {
   console.log(`Releasing Version: ${process.env.VERSION}`);
-  const rawVersion = process.env.VERSION.replaceAll('v', '');
-  const versionParts = rawVersion.trim().split('.');
+  const rawVersion = process.env.VERSION.replaceAll("v", "");
+  const versionParts = rawVersion.trim().split(".");
   if (versionParts.length != 3) {
-    throw new Error(`Expected version major, minor and patch values. ${process.env.VERSION} => ${versionParts}`);
+    throw new Error(
+      `Expected version major, minor and patch values. ${process.env.VERSION} => ${versionParts}`
+    );
   }
   const tagNames = [
     `v${versionParts[0]}.${versionParts[1]}.${versionParts[2]}`,
@@ -54,4 +54,4 @@ module.exports = async function({context, octokit}) {
       generate_release_notes: true,
     });
   }
-}
+};

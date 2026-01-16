@@ -30,3 +30,4 @@ jobs:
           jsonnet-dir: ./testdata/
           generated-dir: ./testdata/generated/
           convert-to-yaml: true
+          jb-install: true
