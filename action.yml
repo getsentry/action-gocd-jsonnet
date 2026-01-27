@@ -49,19 +49,23 @@ runs:
     - name: jsonnet bundler install
       shell: bash
       if: ${{ inputs.jb-install == 'true' }}
+      env:
+        JSONNET_DIR: ${{ inputs.jsonnet-dir }}
       run: |
-        cd ${{inputs.jsonnet-dir}}
+        cd "$JSONNET_DIR"
         jb install
 
     - name: jsonnetfmt
       id: jsonnetfmt
       shell: bash
+      env:
+        JSONNET_DIR: ${{ inputs.jsonnet-dir }}
       run: |
         set -eou pipefail
 
         # Remove multiple slashes from path
-        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
+        ignore_path=$(echo "$JSONNET_DIR/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find "$JSONNET_DIR" -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n📋 Checking format of: $i\n";
           jsonnetfmt --test $i
         done
@@ -73,61 +77,73 @@ runs:
 
     - name: jsonnet-lint
       shell: bash
+      env:
+        JSONNET_DIR: ${{ inputs.jsonnet-dir }}
       run: |
         set -eou pipefail
 
         # Remove multiple slashes from path
-        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
+        ignore_path=$(echo "$JSONNET_DIR/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find "$JSONNET_DIR" -type f \( -name '*.libsonnet' -o -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🔬 Linting: $i\n";
-          jsonnet-lint -J ${{inputs.jsonnet-dir}}/vendor $i
+          jsonnet-lint -J "$JSONNET_DIR/vendor" $i
         done
 
     - name: Remove existing pipelines to ensure we don't have lingering pipelines
       shell: bash
+      env:
+        GENERATED_DIR: ${{ inputs.generated-dir }}
       run: |
-        rm -rf   ${{inputs.generated-dir}}
-        mkdir -p ${{inputs.generated-dir}}
+        rm -rf   "$GENERATED_DIR"
+        mkdir -p "$GENERATED_DIR"
 
     - name: Render Multiple Files
       shell: bash
       if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'false' }}
+      env:
+        JSONNET_DIR: ${{ inputs.jsonnet-dir }}
+        GENERATED_DIR: ${{ inputs.generated-dir }}
       run: |
         set -eou pipefail
 
-        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
+        ignore_path=$(echo "$JSONNET_DIR/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find "$JSONNET_DIR" -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
           jsonnet \
-            -J ${{inputs.jsonnet-dir}}/vendor \
+            -J "$JSONNET_DIR/vendor" \
             --ext-code output-files=true \
-            -m ${{inputs.generated-dir}} \
+            -m "$GENERATED_DIR" \
             $i;
         done
 
     - name: Render Single File
       shell: bash
       if: ${{ inputs.render-jsonnet-files =='true' && inputs.render-as-single-file == 'true' }}
+      env:
+        JSONNET_DIR: ${{ inputs.jsonnet-dir }}
+        GENERATED_DIR: ${{ inputs.generated-dir }}
       run: |
         set -eou pipefail
 
-        ignore_path=$(echo "${{inputs.jsonnet-dir}}/vendor/*" | sed 's|/\+|/|g')
-        for i in $(find ${{inputs.jsonnet-dir}} -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
+        ignore_path=$(echo "$JSONNET_DIR/vendor/*" | sed 's|/\+|/|g')
+        for i in $(find "$JSONNET_DIR" -type f \( -name '*.jsonnet' \) -not -path "$ignore_path" ); do
           echo -e "\n🖨️ Rendering: $i\n";
           jsonnet \
-            -J ${{inputs.jsonnet-dir}}/vendor \
+            -J "$JSONNET_DIR/vendor" \
             --ext-code output-files=false \
-            -o ${{inputs.generated-dir}}/all-pipelines.yaml \
+            -o "$GENERATED_DIR/all-pipelines.yaml" \
             $i;
         done
 
     - name: Convert json to yaml
       shell: bash
       if: ${{ inputs.convert-to-yaml == 'true' }}
+      env:
+        GENERATED_DIR: ${{ inputs.generated-dir }}
       run: |
         set -eou pipefail
 
-        for i in $(find ${{inputs.generated-dir}} -type f \( -name '*.yaml' \) ); do
+        for i in $(find "$GENERATED_DIR" -type f \( -name '*.yaml' \) ); do
           echo -e "\n💱 Converting to yaml: $i\n";
           yq -p json -o yaml -i $i;
         done
