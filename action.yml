@@ -35,16 +35,46 @@ runs:
   steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
-    - name: Install go
-      uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639 # v4
+    # Pinned prebuilt release binaries (linux/amd64) instead of compiling
+    # them with `go install ...@latest` on every run (~60s).
+    # sha256s: go-jsonnet and yq from the upstream release checksum files;
+    # jsonnet-bundler publishes none, so jb's is of the v0.6.0 release asset.
     - name: Install Jsonnet
       shell: bash
+      env:
+        JSONNET_VERSION: "0.22.0"
+        JSONNET_SHA256: e87a93ea44e34da92c15636205c7f2240bf3ac92d00ccb855dbb4e7e03ea6941
+        JB_VERSION: "0.6.0"
+        JB_SHA256: 78e54afbbc3ff3e0942b1576b4992277df4f6beb64cddd58528a76f0cd70db54
+        YQ_VERSION: "4.54.1"
+        YQ_SHA256: 8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f
       run: |
-        go install github.com/google/go-jsonnet/cmd/jsonnet@latest
-        go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
-        go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
-        go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
-        go install github.com/mikefarah/yq/v4@latest
+        set -euo pipefail
+        if [ "$RUNNER_OS" != "Linux" ] || [ "$RUNNER_ARCH" != "X64" ]; then
+          echo "::error::action-gocd-jsonnet only supports Linux X64 runners (got $RUNNER_OS $RUNNER_ARCH)"
+          exit 1
+        fi
+
+        bin="$RUNNER_TEMP/gocd-jsonnet-bin"
+        mkdir -p "$bin"
+
+        fetch() {
+          curl -fsSL --retry 3 -o "$2" "$1"
+          echo "$3  $2" | sha256sum -c -
+        }
+
+        fetch "https://github.com/google/go-jsonnet/releases/download/v${JSONNET_VERSION}/go-jsonnet_${JSONNET_VERSION}_linux_amd64.tar.gz" \
+          "$RUNNER_TEMP/go-jsonnet.tar.gz" "$JSONNET_SHA256"
+        tar -xzf "$RUNNER_TEMP/go-jsonnet.tar.gz" -C "$bin" jsonnet jsonnetfmt jsonnet-lint
+
+        fetch "https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/v${JB_VERSION}/jb-linux-amd64" \
+          "$bin/jb" "$JB_SHA256"
+
+        fetch "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" \
+          "$bin/yq" "$YQ_SHA256"
+
+        chmod +x "$bin"/*
+        echo "$bin" >> "$GITHUB_PATH"
 
     - name: jsonnet bundler install
       shell: bash
